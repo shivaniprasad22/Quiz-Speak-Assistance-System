@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+  <script src="https://cdn.jsdelivr.net/jquery/2.2.1/jquery.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      background-color: #f0f4f8;
+    }
+
+    .sidebar {
+      width: 30%;
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sidebar h1 {
+      margin: 0;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      text-align: center;
+    }
+
+    .question-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .question-list button {
+      width: 40px;
+      height: 40px;
+      margin: 5px;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .question-list button:hover {
+      background-color: #1abc9c;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      background-color: #ffffff;
+    }
+
+    .question-box {
+      margin-bottom: 20px;
+      font-size: 1.4em;
+      color: #333;
+      max-width: 60%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      margin-left: 20px;
+    }
+
+    .options input[type="radio"] {
+      margin: 10px 0;
+    }
+
+    .control-buttons {
+      margin-top: 30px;
+    }
+
+    .control-buttons button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .control-buttons button:hover {
+      background-color: #3498db;
+    }
+
+    #timer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .footer {
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      background-color: #34495e;
+      color: white;
+      position: fixed;
+      bottom: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h1>Java Programming Quiz</h1>
+  <div class="question-list" id="question-list">
+    <button onclick="showQuestion(0)">1</button>
+    <button onclick="showQuestion(1)">2</button>
+    <button onclick="showQuestion(2)">3</button>
+    <button onclick="showQuestion(3)">4</button>
+    <button onclick="showQuestion(4)">5</button>
+    <button onclick="showQuestion(5)">6</button>
+    <button onclick="showQuestion(6)">7</button>
+    <button onclick="showQuestion(7)">8</button>
+    <button onclick="showQuestion(8)">9</button>
+    <button onclick="showQuestion(9)">10</button>
+  </div>
+  <p id="timer">Time Left: 1:00</p>
+</div>
+
+<div class="main-content" id="main-content">
+  <div class="question-box" id="question-text">Click on a question number to start.</div>
+  <div class="options" id="options">
+    <!-- Options will be dynamically populated here -->
+  </div>
+  <div class="control-buttons hidden" id="control-buttons">
+    <button onclick="previous()">Previous</button>
+    <button onclick="next()">Next</button>
+    <button onclick="showAnswer()">Check Answer</button>
+    <button onclick="submitQuiz()">Finish Quiz</button>
+    <button onclick="reListen()">Re-listen to Question</button>
+  </div>
+</div>
+
+<div class="footer">
+  <p>@javaprogrammingquiz.com</p>
+</div>
+
+<script>
+  let timerStarted = false;
+  let timeLeft = 60;
+  let timerInterval;
+  let currentIndex = 0;
+  let question = [
+    "What is the default value of a boolean variable in Java?",
+    "Which of the following is not a valid data type in Java?",
+    "What is the purpose of the 'final' keyword in Java?",
+    "Which class is the superclass of all Java classes?",
+    "Which method is used to start a thread in Java?",
+    "Which of the following is a wrapper class in Java?",
+    "Which method in Java is used to print output to the console?",
+    "Which of the following can be used to create an immutable object in Java?",
+    "In Java, which statement is used to exit from a loop?",
+    "What does JVM stand for?"
+  ];
+  let opt1 = ["false", "float", "To define constants", "Object", "start()", "Integer", "print()", "By using the 'final' keyword", "continue", "Java Virtual Machine"];
+  let opt2 = ["true", "double", "To prevent inheritance", "Class", "run()", "String", "System.out.println()", "By overriding the 'toString()' method", "break", "Java Verified Machine"];
+  let opt3 = ["null", "char", "To prevent changes in the variable's value", "Throwable", "execute()", "Long", "println()", "By using the 'private' modifier", "exit", "Java Virtual Macro"];
+  let opt4 = ["0", "boolean", "To mark methods as abstract", "Serializable", "init()", "Byte", "printIn()", "By using the 'volatile' keyword", "stop", "Java Virtual Machine"];
+  let correctans = ["false", "float", "To define constants", "Object", "start()", "Integer", "System.out.println()", "By using the 'final' keyword", "break", "Java Virtual Machine"];
+  let score = new Array(10).fill(0);
+
+  function showQuestion(index) {
+    if (!timerStarted) {
+      startTimer();
+      timerStarted = true;
+      document.getElementById("control-buttons").classList.remove("hidden"); // Show buttons when quiz starts
+    }
+    currentIndex = index;
+    document.getElementById("question-text").innerHTML = question[index];
+    document.getElementById("options").innerHTML = `
+      <input type='radio' name='x' value='${opt1[index]}'> ${opt1[index]}<br>
+      <input type='radio' name='x' value='${opt2[index]}'> ${opt2[index]}<br>
+      <input type='radio' name='x' value='${opt3[index]}'> ${opt3[index]}<br>
+      <input type='radio' name='x' value='${opt4[index]}'> ${opt4[index]}
+    `;
+    responsiveVoice.speak(question[index], "UK English Male"); // Speak question
+    responsiveVoice.speak("Option 1: " + opt1[index], "UK English Male"); // Speak options
+    responsiveVoice.speak("Option 2: " + opt2[index], "UK English Male");
+    responsiveVoice.speak("Option 3: " + opt3[index], "UK English Male");
+    responsiveVoice.speak("Option 4: " + opt4[index], "UK English Male");
+  }
+
+  function startTimer() {
+    timerInterval = setInterval(function() {
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        submitQuiz();
+      } else {
+        timeLeft--;
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        document.getElementById("timer").textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+      }
+    }, 1000);
+  }
+
+  function showAnswer() {
+    const selectedOption = document.querySelector('input[name="x"]:checked');
+    if (selectedOption) {
+      const answer = selectedOption.value;
+      if (correctans[currentIndex] === answer) {
+        score[currentIndex] = 1;
+        alert("Correct!");
+        document.getElementById("question-list").children[currentIndex].style.backgroundColor = "#27ae60"; // Green for correct
+      } else {
+        alert("Incorrect!");
+        document.getElementById("question-list").children[currentIndex].style.backgroundColor = "#e74c3c"; // Red for incorrect
+      }
+    } else {
+      alert("Please select an answer before checking.");
+    }
+  }
+
+  function next() {
+    if (currentIndex < 9) {
+      showQuestion(++currentIndex);
+    }
+  }
+
+  function previous() {
+    if (currentIndex > 0) {
+      showQuestion(--currentIndex);
+    }
+  }
+
+  function submitQuiz() {
+    clearInterval(timerInterval);
+    let totalScore = score.reduce((a, b) => a + b, 0);
+    alert("Quiz Completed! Your score: " + totalScore + "/10");
+  }
+
+  function reListen() {
+    responsiveVoice.speak(question[currentIndex], "UK English Male"); // Re-listen to question
+  }
+</script>
+
+</body>
+</html>

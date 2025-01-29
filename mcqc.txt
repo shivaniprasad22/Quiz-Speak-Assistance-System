@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+  <script src="https://cdn.jsdelivr.net/jquery/2.2.1/jquery.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      background-color: #f0f4f8;
+    }
+
+    .sidebar {
+      width: 30%;
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sidebar h1 {
+      margin: 0;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+      text-align: center;
+    }
+
+    .question-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .question-list button {
+      width: 40px;
+      height: 40px;
+      margin: 5px;
+      background-color: #34495e;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .question-list button:hover {
+      background-color: #1abc9c;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      background-color: #ffffff;
+    }
+
+    .question-box {
+      margin-bottom: 20px;
+      font-size: 1.4em;
+      color: #333;
+      max-width: 60%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      margin-left: 20px;
+    }
+
+    .options input[type="radio"] {
+      margin: 10px 0;
+    }
+
+    .control-buttons {
+      margin-top: 30px;
+    }
+
+    .control-buttons button {
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .control-buttons button:hover {
+      background-color: #3498db;
+    }
+
+    #timer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .footer {
+      width: 100%;
+      text-align: center;
+      padding: 10px;
+      background-color: #34495e;
+      color: white;
+      position: fixed;
+      bottom: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .highlight {
+      outline: 2px solid #e67e22;
+    }
+
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .retry-btn {
+      background-color: #e67e22;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .retry-btn:hover {
+      background-color: #d35400;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h1>Multiple Choice Quiz</h1>
+  <div class="question-list" id="question-list">
+    <button onclick="showQuestion(0)" class="question-btn">1</button>
+    <button onclick="showQuestion(1)" class="question-btn">2</button>
+    <button onclick="showQuestion(2)" class="question-btn">3</button>
+    <button onclick="showQuestion(3)" class="question-btn">4</button>
+    <button onclick="showQuestion(4)" class="question-btn">5</button>
+    <button onclick="showQuestion(5)" class="question-btn">6</button>
+    <button onclick="showQuestion(6)" class="question-btn">7</button>
+    <button onclick="showQuestion(7)" class="question-btn">8</button>
+    <button onclick="showQuestion(8)" class="question-btn">9</button>
+    <button onclick="showQuestion(9)" class="question-btn">10</button>
+  </div>
+  <button onclick="retryQuiz()" class="retry-btn">Retry Quiz</button>
+  <p id="timer">Time Left: 1:00</p>
+</div>
+
+<div class="main-content" id="main-content">
+  <div class="question-box" id="question-text">Click on a question number to start.</div>
+  <div class="options" id="options">
+    <!-- Options will be dynamically populated here -->
+  </div>
+  <div class="control-buttons hidden" id="control-buttons">
+    <button onclick="previous()" aria-label="Go to the previous question">Previous</button>
+    <button onclick="next()" aria-label="Go to the next question">Next</button>
+    <button onclick="showAnswer()" aria-label="Check your selected answer">Check Answer</button>
+    <button onclick="submitQuiz()" aria-label="Finish the quiz">Finish Quiz</button>
+    <button onclick="reListen()" aria-label="Re-listen to the current question">Re-listen to Question</button>
+  </div>
+</div>
+
+<div class="footer">
+  <p>@mcqhai.com</p>
+</div>
+
+<script>
+  let timerStarted = false;
+  let timeLeft = 60;
+  let timerInterval;
+  let currentIndex = 0;
+  let question = [
+    "Who is the father of C language?",
+    "Which of the following is not a valid C variable name?",
+    "All keywords in C are in ____________",
+    "Which of the following is true for variable names in C?",
+    "Which is a valid C expression?",
+    "Which of the following cannot be a variable name in C?",
+    "What is short int in C programming?",
+    "Which keyword is used to prevent any changes in the variable within a C program?",
+    "What is an example of iteration in C?",
+    "In C language, FILE is of which data type?"
+  ];
+  let opt1 = ["Steve Jobs", "int number;", "LowerCase letters", "They can contain alphanumeric characters as well as special characters", "int my_num = 100,000;", "volatile", "The basic data type of C", "immutable", "for", "int"];
+  let opt2 = ["James Gosling", "float rate;", "UpperCase letters", "It is not an error to declare a variable to be one of the keywords(like goto, static)", "int my_num = 100000;", "true", "Qualifier", "mutable", "while", "char *"];
+  let opt3 = ["Dennis Ritchie", "int variable_count;", "CamelCase letters", "Variable names cannot start with a digit", "int my num = 1000;", "friend", "Short is the qualifier and int is the basic data type", "const", "do-while", "struct"];
+  let opt4 = ["Rasmus Lerdorf", "int $main;", "None of the mentioned", "Variable can be of any length", "int $my_num = 10000;", "export", "All of the mentioned", "volatile", "all of the mentioned", "None of the mentioned"];
+  let correctans = ["Dennis Ritchie", "int $main;", "LowerCase letters", "Variable names cannot start with a digit", "int my_num = 100000;", "volatile", "Short is the qualifier and int is the basic data type", "const", "all of the mentioned", "struct"];
+  let score = new Array(10).fill(0);
+
+  function showQuestion(index) {
+    if (!timerStarted) {
+      startTimer();
+      timerStarted = true;
+      document.getElementById("control-buttons").classList.remove("hidden"); // Show buttons when quiz starts
+    }
+    currentIndex = index;
+    document.getElementById("question-text").innerHTML = question[index];
+    document.getElementById("options").innerHTML = `
+      <input type='radio' name='x' value='${opt1[index]}'> ${opt1[index]}<br>
+      <input type='radio' name='x' value='${opt2[index]}'> ${opt2[index]}<br>
+      <input type='radio' name='x' value='${opt3[index]}'> ${opt3[index]}<br>
+      <input type='radio' name='x' value='${opt4[index]}'> ${opt4[index]}
+    `;
+  }
+
+  function previous() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      showQuestion(currentIndex);
+    }
+  }
+
+  function next() {
+    if (currentIndex < question.length - 1) {
+      currentIndex++;
+      showQuestion(currentIndex);
+    }
+  }
+
+  function showAnswer() {
+    let options = document.getElementsByName("x");
+    let selected = "";
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].checked) {
+        selected = options[i].value;
+      }
+    }
+    if (selected === correctans[currentIndex]) {
+      score[currentIndex] = 1;
+    } else {
+      score[currentIndex] = 0;
+    }
+  }
+
+  function submitQuiz() {
+    let total = score.reduce((a, b) => a + b, 0);
+    alert("Your score is " + total + " out of " + question.length);
+    retryQuiz();
+  }
+
+  function retryQuiz() {
+    clearInterval(timerInterval);
+    timerStarted = false;
+    timeLeft = 60;
+    score = new Array(10).fill(0);
+    document.getElementById("timer").innerText = "Time Left: 1:00";
+    showQuestion(0);
+    document.getElementById("question-list").reset();
+  }
+
+  function startTimer() {
+    timerInterval = setInterval(function () {
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        submitQuiz();
+      } else {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        document.getElementById("timer").innerText = "Time Left: " + minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
+        timeLeft--;
+      }
+    }, 1000);
+  }
+
+  function reListen() {
+    let currentQuestion = question[currentIndex];
+    responsiveVoice.speak(currentQuestion, "UK English Female");
+  }
+
+</script>
+
+</body>
+</html>
